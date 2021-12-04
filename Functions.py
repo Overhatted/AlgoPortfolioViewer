@@ -27,57 +27,84 @@ def create_assets_table(config):
         print("No assets")
         return
     assets_sheet = ipysheet.sheet(key='assets', rows=len(config['assets']), columns=6, column_headers=['Name', 'ID', 'Type', 'Amount', 'Price', 'Value'])
+    i = 0
     total_value = 0
-    for i in range(len(config['assets'])):
-        ipysheet.cell(i, 0, value=config['assets'][i]['name'], type='text', read_only=True)
-        ipysheet.cell(i, 1, value=config['assets'][i]['id'], type='text', read_only=True)
-        ipysheet.cell(i, 2, value=config['assets'][i]['type'], type='text', read_only=True)
-        ipysheet.cell(i, 3, value=config['assets'][i]['amount'], type='numeric', read_only=True)
-        ipysheet.cell(i, 4, value=config['assets'][i]['price'], type='numeric', read_only=True)
-        ipysheet.cell(i, 5, value=config['assets'][i]['value'], type='numeric', read_only=True)
-        total_value = total_value + config['assets'][i]['value']
+    for asset_id, asset in config['assets'].items():
+        ipysheet.cell(i, 0, value=asset['name'], type='text', read_only=True)
+        ipysheet.cell(i, 1, value=asset_id, type='text', read_only=True)
+        ipysheet.cell(i, 2, value=asset['type'], type='text', read_only=True)
+        ipysheet.cell(i, 3, value=asset['amount'], type='numeric', read_only=True)
+        ipysheet.cell(i, 4, value=asset['price'], type='numeric', read_only=True)
+        ipysheet.cell(i, 5, value=asset['value'], type='numeric', read_only=True)
+        total_value = total_value + asset['value']
+        i = i + 1
     print("Total value: {}".format(total_value))
     display(assets_sheet)
 
 def add_asset_amount(config, wallet, asset_id, asset_amount):
-    assets_with_this_id = list(filter(lambda asset: asset['id'] == asset_id, config['assets']))
-    if len(assets_with_this_id) == 0:
-        print("Asset with id {} not found. Is in wallet {}".format(asset_id, wallet))
+    if asset_id in config['assets']:
+        if 'amount' in config['assets'][asset_id]:
+            config['assets'][asset_id]['amount'] += asset_amount / 1_000_000
+        else:
+            config['assets'][asset_id]['amount'] = asset_amount / 1_000_000
     else:
-        assets_with_this_id[0]['amount'] = assets_with_this_id[0]['amount'] + asset_amount / 1_000_000
+        config['assets'][asset_id] = {'amount': asset_amount / 1_000_000}
 
 def fill_assets_amount(config):
     if "algod" not in config:
         config['algod'] = AlgodClient("", "https://api.algoexplorer.io", headers={'User-Agent': 'algosdk'})
     
-    for asset in config['assets']:
-        asset['amount'] = 0
-    
     for wallet in config['wallets']:
         account_info = config['algod'].account_info(wallet)
-        print(account_info)
         add_asset_amount(config, wallet, 0, account_info['amount'])
         for account_info_asset in account_info['assets']:
             add_asset_amount(config, wallet, account_info_asset['asset-id'], account_info_asset['amount'])
 
+def fill_missing_asset_info(config):
+    for asset_id, asset in config['assets'].items():
+        if 'name' not in asset:
+            asset['name'] = ''
+        if 'type' not in asset:
+            if asset_id == 0:
+                asset['type'] = 'N/A'
+            else:
+                asset['type'] = 'Tinyman'
+        if 'amount' not in asset:
+            asset['amount'] = 0
+
 def fill_assets_price(config):
     tinyman_client = TinymanMainnetClient()
     tinyman_algo = tinyman_client.fetch_asset(0)
-
-    for asset in config['assets']:
-        if int(asset['id']) == 0:
+    
+    for asset_id, asset in config['assets'].items():
+        if 'price' in asset:
+            continue
+        if asset_id == 0:
             asset['price'] = 1
         else:
-            asset['tinyman_asset'] = tinyman_client.fetch_asset(int(asset['id']))
-            asset['tinyman_pool'] = tinyman_client.fetch_pool(asset['tinyman_asset'], tinyman_algo)
-            quote = asset['tinyman_pool'].fetch_fixed_input_swap_quote(asset['tinyman_asset'](1_000_000), slippage=0.01)
-            asset['price'] = quote.price
+            if asset['type'] == 'Tinyman':
+                asset['tinyman_asset'] = tinyman_client.fetch_asset(asset_id)
+                asset['tinyman_pool'] = tinyman_client.fetch_pool(asset['tinyman_asset'], tinyman_algo)
+                try:
+                    quote = asset['tinyman_pool'].fetch_fixed_input_swap_quote(asset['tinyman_asset'](1_000_000), slippage=0.01)
+                except Exception:
+                    asset['price'] = 'N/A'
+                else:
+                    asset['price'] = quote.price
+            else:
+                asset['price'] = 'N/A'
 
 def fill_assets_value(config):
-    for asset in config['assets']:
-        asset['value'] = asset['amount'] * asset['price']
+    for asset_id, asset in config['assets'].items():
+        try:
+            priceInt = float(asset['price'])
+        except ValueError:
+            asset['value'] = 0
+        else:
+            asset['value'] = asset['amount'] * priceInt
 
 def fill_assets(config):
     fill_assets_amount(config)
+    fill_missing_asset_info(config)
     fill_assets_price(config)
     fill_assets_value(config)
