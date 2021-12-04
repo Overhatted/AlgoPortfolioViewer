@@ -79,20 +79,24 @@ def fill_assets_price(config):
     for asset_id, asset in config['assets'].items():
         if 'price' in asset:
             continue
+        if asset['amount'] == 0:
+            asset['price'] = '?'
+            continue
         if asset_id == 0:
             asset['price'] = 1
-        else:
-            if asset['type'] == 'Tinyman':
-                asset['tinyman_asset'] = tinyman_client.fetch_asset(asset_id)
-                asset['tinyman_pool'] = tinyman_client.fetch_pool(asset['tinyman_asset'], tinyman_algo)
-                try:
-                    quote = asset['tinyman_pool'].fetch_fixed_input_swap_quote(asset['tinyman_asset'](1_000_000), slippage=0.01)
-                except Exception:
-                    asset['price'] = 'Error'
-                else:
-                    asset['price'] = quote.price
+            continue
+
+        if asset['type'] == 'Tinyman':
+            asset['tinyman_asset'] = tinyman_client.fetch_asset(asset_id)
+            asset['tinyman_pool'] = tinyman_client.fetch_pool(asset['tinyman_asset'], tinyman_algo)
+            try:
+                quote = asset['tinyman_pool'].fetch_fixed_input_swap_quote(asset['tinyman_asset'](1_000_000), slippage=0.01)
+            except Exception:
+                asset['price'] = 'Error'
             else:
-                asset['price'] = 'Unknown type'
+                asset['price'] = quote.price
+        else:
+            asset['price'] = 'Unknown type'
 
 def fill_assets_value(config):
     for asset_id, asset in config['assets'].items():
