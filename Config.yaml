@@ -1,0 +1,21 @@
+wallets:
+- ZW3ISEHZUHPO7OZGMKLKIIMKVICOUDRCERI454I3DB2BH52HGLSO67W754
+assets:
+- name: Algo
+  id: 0
+  type: N/A
+- name: USDC
+  id: 31566704
+  type: tinyman
+- name: Headline
+  id: 137594422
+  type: tinyman
+- name: Yieldly
+  id: 226701642
+  type: tinyman
+- name: AlgoGems
+  id: 230946361
+  type: tinyman
+- name: Algoneer
+  id: 305992851
+  type: tinyman
