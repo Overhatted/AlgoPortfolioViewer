@@ -85,12 +85,15 @@ def fill_missing_asset_info(config):
         cache = {}
     for asset_id, asset in config['assets'].items():
         if 'name' not in asset:
-            asset_name = dict_nested_get(cache, None, 'asset_names', str(asset_id))
-            if asset_name == None:
-                asset_info = config['algod'].asset_info(asset_id)
-                asset_name = dict_nested_get(asset_info, '', 'params', 'name')
-                dict_nested_set(cache, asset_name, 'asset_names', str(asset_id))
-            asset['name'] = asset_name
+            if asset_id == 0:
+                asset['name'] = 'Algo'
+            else:
+                asset_name = dict_nested_get(cache, None, 'asset_names', str(asset_id))
+                if asset_name == None:
+                    asset['asset_info'] = config['algod'].asset_info(asset_id)
+                    asset_name = dict_nested_get(asset['asset_info'], '', 'params', 'name')
+                    dict_nested_set(cache, asset_name, 'asset_names', str(asset_id))
+                asset['name'] = asset_name
         if 'type' not in asset:
             if asset_id == 0:
                 asset['type'] = 'N/A'
