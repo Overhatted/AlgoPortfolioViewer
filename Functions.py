@@ -30,12 +30,12 @@ def create_assets_table(config):
     i = 0
     total_value = 0
     for asset_id, asset in config['assets'].items():
-        ipysheet.cell(i, 0, value=asset['name'], type='text', read_only=True)
-        ipysheet.cell(i, 1, value=asset_id, type='text', read_only=True)
-        ipysheet.cell(i, 2, value=asset['type'], type='text', read_only=True)
-        ipysheet.cell(i, 3, value=asset['amount'], type='numeric', read_only=True)
-        ipysheet.cell(i, 4, value=asset['price'], type='numeric', read_only=True)
-        ipysheet.cell(i, 5, value=asset['value'], type='numeric', read_only=True)
+        ipysheet.cell(i, 0, value=asset['name'], read_only=True)
+        ipysheet.cell(i, 1, value=str(asset_id), read_only=True)
+        ipysheet.cell(i, 2, value=asset['type'], read_only=True)
+        ipysheet.cell(i, 3, value=str(asset['amount']), read_only=True)
+        ipysheet.cell(i, 4, value=str(asset['price']), read_only=True)
+        ipysheet.cell(i, 5, value=str(asset['value']), read_only=True)
         total_value = total_value + asset['value']
         i = i + 1
     print("Total value: {}".format(total_value))
