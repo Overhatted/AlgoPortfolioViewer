@@ -41,6 +41,10 @@ def create_assets_table(config):
     print("Total value: {}".format(total_value))
     display(assets_sheet)
 
+def add_algod_client(config):
+    if "algod" not in config:
+        config['algod'] = AlgodClient("", "https://api.algoexplorer.io", headers={'User-Agent': 'algosdk'})
+
 def add_asset_amount(config, wallet, asset_id, asset_amount):
     if asset_id in config['assets']:
         if 'amount' in config['assets'][asset_id]:
@@ -51,9 +55,6 @@ def add_asset_amount(config, wallet, asset_id, asset_amount):
         config['assets'][asset_id] = {'amount': asset_amount / 1_000_000}
 
 def fill_assets_amount(config):
-    if "algod" not in config:
-        config['algod'] = AlgodClient("", "https://api.algoexplorer.io", headers={'User-Agent': 'algosdk'})
-    
     for wallet in config['wallets']:
         account_info = config['algod'].account_info(wallet)
         add_asset_amount(config, wallet, 0, account_info['amount'])
@@ -108,6 +109,7 @@ def fill_assets_value(config):
             asset['value'] = asset['amount'] * priceInt
 
 def fill_assets(config):
+    add_algod_client(config)
     fill_assets_amount(config)
     fill_missing_asset_info(config)
     fill_assets_price(config)
