@@ -43,6 +43,8 @@ def create_assets_table(config):
 
 def add_algod_client(config):
     config['algod'] = AlgodClient("", "https://api.algoexplorer.io", headers={'User-Agent': 'algosdk'})
+    if 'assets' not in config:
+        config['assets'] = {}
 
 def add_asset_amount(config, wallet, asset_id, asset_amount):
     if asset_id in config['assets']:
