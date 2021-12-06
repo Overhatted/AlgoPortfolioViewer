@@ -1,15 +1,3 @@
+display asset id: 31566704
 wallets:
 - ZW3ISEHZUHPO7OZGMKLKIIMKVICOUDRCERI454I3DB2BH52HGLSO67W754
-assets:
-  0:
-    name: Algo
-  31566704:
-    name: USDC
-  137594422:
-    name: Headline
-  226701642:
-    name: Yieldly
-  230946361:
-    name: AlgoGems
-  305992851:
-    name: Algoneer
