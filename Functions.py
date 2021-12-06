@@ -2,6 +2,7 @@ from __future__ import annotations
 import os, yaml, json, ipysheet, math
 from algosdk.v2client.algod import AlgodClient
 from tinyman.v1.client import TinymanMainnetClient
+from tinyman.v1.pools import get_pool_info_from_account_info
 
 def dict_nested_get(dictionary, default, *keys):
     nested_dictionary = dictionary
@@ -34,7 +35,9 @@ class Asset:
     _price: float
     _decimals: int
     
+    _creator: str
     _asset_info: dict
+    _creator_account_info: dict
     
     def __init__(self, asset_id: int, algod: AlgodClient, assets: Assets, asset_config: dict) -> None:
         self._asset_id = asset_id
@@ -82,7 +85,10 @@ class Asset:
             if self._asset_id == 0:
                 self._price_source = 'N/A'
             else:
-                self._price_source = 'Tinyman'
+                if self.get_name().startswith('Tinyman Pool '):
+                    self._price_source = 'Tinyman Pool Token'
+                else:
+                    self._price_source = 'Tinyman'
         return self._price_source
     
     def get_amount(self) -> int:
@@ -107,6 +113,13 @@ class Asset:
                         self._price = None
                     else:
                         self._price = quote.price
+                elif self.get_price_source() == 'Tinyman Pool Token':
+                    pool_info = get_pool_info_from_account_info(self._get_creator_account_info())
+                    price_asset1 = self._assets.get(pool_info['asset1_id']).get_price()
+                    total_value_asset1 = price_asset1 * pool_info['asset1_reserves']
+                    price_asset2 = self._assets.get(pool_info['asset2_id']).get_price()
+                    total_value_asset2 = price_asset2 * pool_info['asset2_reserves']
+                    self._price = (total_value_asset1 + total_value_asset2) / pool_info['issued_liquidity']
                 else:
                     self._price = None
         return self._price
@@ -118,10 +131,26 @@ class Asset:
         else:
             return self.get_amount() * price
     
+    def _get_creator(self) -> str:
+        if not hasattr(self, '_creator'):
+            cache = self._load_cache()
+            cached_creator = dict_nested_get(cache, None, 'assets', str(self._asset_id), 'creator')
+            if cached_creator == None:
+                cached_creator = dict_nested_get(self._get_asset_info(), '', 'params', 'creator')
+                dict_nested_set(cache, cached_creator, 'assets', str(self._asset_id), 'creator')
+                self._save_cache(cache)
+            self._creator = cached_creator
+        return self._creator
+    
     def _get_asset_info(self) -> dict:
         if not hasattr(self, '_asset_info'):
             self._asset_info = self._algod.asset_info(self._asset_id)
         return self._asset_info
+    
+    def _get_creator_account_info(self) -> dict:
+        if not hasattr(self, '_creator_account_info'):
+            self._creator_account_info = self._algod.account_info(self._get_creator())
+        return self._creator_account_info
     
     def _load_cache(self) -> dict:
         if os.path.isfile('Cache.json'):
