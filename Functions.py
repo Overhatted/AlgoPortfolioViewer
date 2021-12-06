@@ -172,7 +172,7 @@ def create_wallets_table(wallets):
         ipysheet.cell(i, 0, value=wallets[i], type='text', read_only=True)
     display(wallets_sheet)
 
-def create_assets_table(assets):
+def create_assets_table(assets, display_asset_id=0):
     asset_ids = list(filter(lambda asset_id: assets.get(asset_id).get_amount() != 0, assets.get_asset_ids()))
     if len(asset_ids) == 0:
         print("No assets")
@@ -180,7 +180,8 @@ def create_assets_table(assets):
     assets_sheet = ipysheet.sheet(key='assets', rows=len(asset_ids), columns=6, column_headers=['Name', 'ID', 'Price Source', 'Amount', 'Price', 'Value'])
     i = 0
     total_value = 0
-    algo_decimals_factor = math.pow(10, assets.get(0).get_decimals())
+    display_asset_price = assets.get(display_asset_id).get_price()
+    display_asset_decimals_factor = math.pow(10, assets.get(display_asset_id).get_decimals())
     for asset_id in asset_ids:
         asset = assets.get(asset_id)
         ipysheet.cell(i, 0, value=asset.get_name(), read_only=True)
@@ -191,16 +192,16 @@ def create_assets_table(assets):
         if asset.get_price() == None:
             priceStr = 'Error'
         else:
-            priceStr = str(asset.get_price() * asset_decimals_factor / algo_decimals_factor)
+            priceStr = str(asset.get_price() / display_asset_price * asset_decimals_factor / display_asset_decimals_factor)
         ipysheet.cell(i, 4, value=priceStr, read_only=True)
         if asset.get_value() == None:
             valueStr = 'Error'
         else:
-            valueStr = str(asset.get_value() / algo_decimals_factor)
+            valueStr = str(asset.get_value() / display_asset_price / display_asset_decimals_factor)
             total_value += asset.get_value()
         ipysheet.cell(i, 5, value=valueStr, read_only=True)
         i = i + 1
-    print("Total value: {}".format(total_value / algo_decimals_factor))
+    print("Total value: {}".format(total_value / display_asset_price / display_asset_decimals_factor))
     display(assets_sheet)
 
 def fill_assets(config):
