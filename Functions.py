@@ -187,13 +187,16 @@ def create_assets_table(assets):
         ipysheet.cell(i, 1, value=str(asset.get_id()), read_only=True)
         ipysheet.cell(i, 2, value=asset.get_price_source(), read_only=True)
         ipysheet.cell(i, 3, value=str(asset.get_amount() / math.pow(10, asset.get_decimals())), read_only=True)
-        ipysheet.cell(i, 4, value=str(asset.get_price()), read_only=True)
-        value = asset.get_value()
-        if value == None:
+        if asset.get_price() == None:
+            priceStr = 'Error'
+        else:
+            priceStr = str(asset.get_price())
+        ipysheet.cell(i, 4, value=priceStr, read_only=True)
+        if asset.get_value() == None:
             valueStr = 'Error'
         else:
-            valueStr = str(value * algo_decimals_factor)
-            total_value += value
+            valueStr = str(asset.get_value() * algo_decimals_factor)
+            total_value += asset.get_value()
         ipysheet.cell(i, 5, value=valueStr, read_only=True)
         i = i + 1
     print("Total value: {}".format(total_value * algo_decimals_factor))
