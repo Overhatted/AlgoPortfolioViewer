@@ -45,9 +45,9 @@ class Asset:
         self._assets = assets
         self._name = asset_config.get('name', None)
         self._price_source = asset_config.get('price_source', None)
-        self._amount = asset_config.get('amount', 0)
         self._price = asset_config.get('price', None)
         self._decimals = asset_config.get('decimals', None)
+        self._amount = asset_config.get('amount', 0) * math.pow(10, self.get_decimals())
     
     def get_id(self) -> int:
         return self._asset_id
