@@ -173,7 +173,7 @@ def create_wallets_table(wallets):
     display(wallets_sheet)
 
 def create_assets_table(assets):
-    asset_ids = assets.get_asset_ids()
+    asset_ids = list(filter(lambda asset_id: assets.get(asset_id).get_amount() != 0, assets.get_asset_ids()))
     if len(asset_ids) == 0:
         print("No assets")
         return
