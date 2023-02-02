@@ -1,4 +1,4 @@
-import os, yaml, json, ipysheet
+import os, yaml, json, ipysheet, math
 from algosdk.v2client.algod import AlgodClient
 from tinyman.v1.client import TinymanMainnetClient
 
@@ -30,6 +30,7 @@ class Asset:
     _price_source: str
     _amount: int
     _price: float
+    _decimals: int
     
     _asset_info: dict
     
@@ -40,6 +41,7 @@ class Asset:
         self._price_source = asset_config.get('price_source', None)
         self._amount = asset_config.get('amount', 0)
         self._price = asset_config.get('price', None)
+        self._decimals = asset_config.get('decimals', None)
     
     def get_id(self) -> int:
         return self._asset_id
@@ -57,6 +59,20 @@ class Asset:
                     self._save_cache(cache)
                 self._name = cached_asset_name
         return self._name
+    
+    def get_decimals(self) -> int:
+        if self._decimals == None:
+            if self._asset_id == 0:
+                self._decimals = 6
+            else:
+                cache = self._load_cache()
+                cached_decimals = dict_nested_get(cache, None, 'assets', str(self._asset_id), 'decimals')
+                if cached_decimals == None:
+                    cached_decimals = dict_nested_get(self._get_asset_info(), '', 'params', 'decimals')
+                    dict_nested_set(cache, cached_decimals, 'assets', str(self._asset_id), 'decimals')
+                    self._save_cache(cache)
+                self._decimals = cached_decimals
+        return self._decimals
     
     def get_price_source(self) -> str:
         if self._price_source == None:
@@ -164,22 +180,23 @@ def create_assets_table(assets):
     assets_sheet = ipysheet.sheet(key='assets', rows=len(asset_ids), columns=6, column_headers=['Name', 'ID', 'Price Source', 'Amount', 'Price', 'Value'])
     i = 0
     total_value = 0
+    algo_decimals_factor = 1 / math.pow(10, assets.get(0).get_decimals())
     for asset_id in asset_ids:
         asset = assets.get(asset_id)
         ipysheet.cell(i, 0, value=asset.get_name(), read_only=True)
         ipysheet.cell(i, 1, value=str(asset.get_id()), read_only=True)
         ipysheet.cell(i, 2, value=asset.get_price_source(), read_only=True)
-        ipysheet.cell(i, 3, value=str(asset.get_amount()), read_only=True)
+        ipysheet.cell(i, 3, value=str(asset.get_amount() / math.pow(10, asset.get_decimals())), read_only=True)
         ipysheet.cell(i, 4, value=str(asset.get_price()), read_only=True)
         value = asset.get_value()
         if value == None:
             valueStr = 'Error'
         else:
-            valueStr = str(value)
-            total_value += asset.get_value()
-        ipysheet.cell(i, 5, value=str(asset.get_value()), read_only=True)
+            valueStr = str(value * algo_decimals_factor)
+            total_value += value
+        ipysheet.cell(i, 5, value=valueStr, read_only=True)
         i = i + 1
-    print("Total value: {}".format(total_value))
+    print("Total value: {}".format(total_value * algo_decimals_factor))
     display(assets_sheet)
 
 def fill_assets(config):
