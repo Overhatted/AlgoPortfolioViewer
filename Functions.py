@@ -1,6 +1,25 @@
-import os, yaml, ipysheet
+import os, yaml, json, ipysheet
 from algosdk.v2client.algod import AlgodClient
 from tinyman.v1.client import TinymanMainnetClient
+
+def dict_nested_get(dictionary, default, *keys):
+    nested_dictionary = dictionary
+    for key in keys:
+        try:
+            nested_dictionary = nested_dictionary[key]
+        except KeyError:
+            return default
+    return nested_dictionary
+
+def dict_nested_set(dictionary, value, *keys):
+    nested_dictionary = dictionary
+    for key in keys[:-1]:
+        try:
+            nested_dictionary = nested_dictionary[key]
+        except KeyError:
+            nested_dictionary[key] = {}
+            nested_dictionary = nested_dictionary[key]
+    nested_dictionary[keys[-1]] = value
 
 def load():
     if os.path.isfile('Config.yaml'):
@@ -59,9 +78,19 @@ def fill_assets_amount(config):
             add_asset_amount(config, wallet, account_info_asset['asset-id'], account_info_asset['amount'])
 
 def fill_missing_asset_info(config):
+    if os.path.isfile('Cache.json'):
+        with open("Cache.json", "r") as stream:
+            cache = json.load(stream)
+    else:
+        cache = {}
     for asset_id, asset in config['assets'].items():
         if 'name' not in asset:
-            asset['name'] = ''
+            asset_name = dict_nested_get(cache, None, 'asset_names', str(asset_id))
+            if asset_name == None:
+                asset_info = config['algod'].asset_info(asset_id)
+                asset_name = dict_nested_get(asset_info, '', 'params', 'name')
+                dict_nested_set(cache, asset_name, 'asset_names', str(asset_id))
+            asset['name'] = asset_name
         if 'type' not in asset:
             if asset_id == 0:
                 asset['type'] = 'N/A'
@@ -69,6 +98,8 @@ def fill_missing_asset_info(config):
                 asset['type'] = 'Tinyman'
         if 'amount' not in asset:
             asset['amount'] = 0
+    with open("Cache.json", "w") as stream:
+        json.dump(cache, stream)
 
 def fill_assets_price(config):
     tinyman_client = TinymanMainnetClient()
