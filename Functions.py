@@ -180,26 +180,27 @@ def create_assets_table(assets):
     assets_sheet = ipysheet.sheet(key='assets', rows=len(asset_ids), columns=6, column_headers=['Name', 'ID', 'Price Source', 'Amount', 'Price', 'Value'])
     i = 0
     total_value = 0
-    algo_decimals_factor = 1 / math.pow(10, assets.get(0).get_decimals())
+    algo_decimals_factor = math.pow(10, assets.get(0).get_decimals())
     for asset_id in asset_ids:
         asset = assets.get(asset_id)
         ipysheet.cell(i, 0, value=asset.get_name(), read_only=True)
         ipysheet.cell(i, 1, value=str(asset.get_id()), read_only=True)
         ipysheet.cell(i, 2, value=asset.get_price_source(), read_only=True)
-        ipysheet.cell(i, 3, value=str(asset.get_amount() / math.pow(10, asset.get_decimals())), read_only=True)
+        asset_decimals_factor = math.pow(10, asset.get_decimals())
+        ipysheet.cell(i, 3, value=str(asset.get_amount() / asset_decimals_factor), read_only=True)
         if asset.get_price() == None:
             priceStr = 'Error'
         else:
-            priceStr = str(asset.get_price())
+            priceStr = str(asset.get_price() * asset_decimals_factor / algo_decimals_factor)
         ipysheet.cell(i, 4, value=priceStr, read_only=True)
         if asset.get_value() == None:
             valueStr = 'Error'
         else:
-            valueStr = str(asset.get_value() * algo_decimals_factor)
+            valueStr = str(asset.get_value() / algo_decimals_factor)
             total_value += asset.get_value()
         ipysheet.cell(i, 5, value=valueStr, read_only=True)
         i = i + 1
-    print("Total value: {}".format(total_value * algo_decimals_factor))
+    print("Total value: {}".format(total_value / algo_decimals_factor))
     display(assets_sheet)
 
 def fill_assets(config):
