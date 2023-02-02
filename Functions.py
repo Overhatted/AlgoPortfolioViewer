@@ -237,7 +237,7 @@ def create_assets_table(assets, display_asset_id=0, display_conversion_factor=1)
     display(assets_sheet)
 
 def fill_assets(config):
-    algod_client = AlgodClient("", "https://api.algoexplorer.io", headers={'User-Agent': 'algosdk'})
+    algod_client = AlgodClient("", "https://node.algoexplorerapi.io", headers={'User-Agent': 'algosdk'})
     assets = Assets(config.get('assets', {}), algod_client)
     assets.add_wallets(config.get('wallets', []))
     return assets
