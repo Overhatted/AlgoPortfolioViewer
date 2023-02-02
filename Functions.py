@@ -103,7 +103,7 @@ class Asset:
                 self._price = 1
             else:
                 if self.get_price_source() == 'Tinyman':
-                    tinyman_client = TinymanMainnetClient()
+                    tinyman_client = TinymanMainnetClient(self._algod)
                     tinyman_algo = tinyman_client.fetch_asset(0)
                     tinyman_asset = tinyman_client.fetch_asset(self._asset_id)
                     tinyman_pool = tinyman_client.fetch_pool(tinyman_asset, tinyman_algo)
