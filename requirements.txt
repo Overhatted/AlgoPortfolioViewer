@@ -1,0 +1,4 @@
+jupyterlab
+ipysheet
+py-algorand-sdk
+git+https://github.com/tinymanorg/tinyman-py-sdk.git
