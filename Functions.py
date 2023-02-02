@@ -88,11 +88,11 @@ def fill_assets_price(config):
                 try:
                     quote = asset['tinyman_pool'].fetch_fixed_input_swap_quote(asset['tinyman_asset'](1_000_000), slippage=0.01)
                 except Exception:
-                    asset['price'] = 'N/A'
+                    asset['price'] = 'Error'
                 else:
                     asset['price'] = quote.price
             else:
-                asset['price'] = 'N/A'
+                asset['price'] = 'Unknown type'
 
 def fill_assets_value(config):
     for asset_id, asset in config['assets'].items():
