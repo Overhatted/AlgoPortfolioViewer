@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os, yaml, json, ipysheet, math
 from algosdk.v2client.algod import AlgodClient
 from tinyman.v1.client import TinymanMainnetClient
@@ -25,6 +26,7 @@ class Asset:
     _asset_id: int
     
     _algod: AlgodClient
+    _assets: Assets
     
     _name: str
     _price_source: str
@@ -34,9 +36,10 @@ class Asset:
     
     _asset_info: dict
     
-    def __init__(self, asset_id: int, algod: AlgodClient, asset_config: dict) -> None:
+    def __init__(self, asset_id: int, algod: AlgodClient, assets: Assets, asset_config: dict) -> None:
         self._asset_id = asset_id
         self._algod = algod
+        self._assets = assets
         self._name = asset_config.get('name', None)
         self._price_source = asset_config.get('price_source', None)
         self._amount = asset_config.get('amount', 0)
@@ -143,7 +146,7 @@ class Assets:
     
     def get(self, asset_id) -> Asset:
         if asset_id not in self._assets:
-            self._assets[asset_id] = Asset(asset_id, self._algod, self._assets_config.get(asset_id, {}))
+            self._assets[asset_id] = Asset(asset_id, self._algod, self, self._assets_config.get(asset_id, {}))
         return self._assets[asset_id]
     
     def add_wallets(self, wallets: list) -> None:
